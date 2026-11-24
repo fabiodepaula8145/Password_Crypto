@@ -1,0 +1,3000 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultBlue — Gerenciador &amp; Gerador de Senhas</title>
+    <style>
+        /* ==========================================================================
+           DESIGN TOKENS & PALETA DE CORES (MODO CLARO PADRÃO & MODO ESCURO)
+           ========================================================================== */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #dbeafe 100%);
+            --surface-bg: #ffffff;
+            --surface-alt: #f8fafc;
+            --surface-border: #cbd5e1;
+            --surface-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --header-bg: linear-gradient(135deg, #1e293b 0%, #0f172a 55%, #1e3a8a 100%);
+            --accent-gradient: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+            --accent-gradient-hover: linear-gradient(135deg, #1e40af 0%, #0369a1 100%);
+            --slate-gradient: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            --accent-color: #1d4ed8;
+            --accent-soft: #eff6ff;
+            --accent-border: #93c5fd;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        }
+
+        body.dark-mode {
+            --bg-gradient: linear-gradient(135deg, #0b1120 0%, #111827 50%, #0f172a 100%);
+            --surface-bg: #1e293b;
+            --surface-alt: #0f172a;
+            --surface-border: #334155;
+            --surface-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.45);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #172554 100%);
+            --accent-color: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.12);
+            --accent-border: #0284c7;
+            --input-bg: #0f172a;
+            --input-border: #334155;
+        }
+
+        /* ==========================================================================
+           RESET & BASE
+           ========================================================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+
+        button, input, select {
+            font-family: inherit;
+        }
+
+        /* ==========================================================================
+           CABEÇALHO (TOPBAR)
+           ========================================================================== */
+        .topbar {
+            background: var(--header-bg);
+            color: #f8fafc;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .topbar-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+        }
+
+        .brand-subtitle {
+            font-size: 0.78rem;
+            color: #93c5fd;
+            font-weight: 500;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ==========================================================================
+           BOTÕES GERAIS
+           ========================================================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.28);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-gradient-hover);
+            box-shadow: 0 6px 16px rgba(29, 78, 216, 0.38);
+        }
+
+        .btn-super {
+            background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+        }
+
+        .btn-super:hover {
+            filter: brightness(1.08);
+        }
+
+        .btn-secondary {
+            background: var(--surface-alt);
+            color: var(--text-primary);
+            border-color: var(--surface-border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-color);
+            background: var(--accent-soft);
+        }
+
+        .btn-theme {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 14px;
+        }
+
+        .btn-theme:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .btn-danger-outline {
+            background: transparent;
+            color: #dc2626;
+            border-color: #fca5a5;
+            padding: 7px 12px;
+            font-size: 0.8rem;
+        }
+
+        body.dark-mode .btn-danger-outline {
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+
+        .btn-danger-outline:hover {
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .btn-icon {
+            padding: 9px;
+            border-radius: var(--radius-sm);
+        }
+
+        /* ==========================================================================
+           LAYOUT PRINCIPAL (2 COLUNAS NO DESKTOP)
+           ========================================================================== */
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 28px 24px 48px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 390px;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 980px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ==========================================================================
+           CARDS & ABAS DE NAVEGAÇÃO
+           ========================================================================== */
+        .card {
+            background: var(--surface-bg);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--surface-shadow);
+            overflow: hidden;
+        }
+
+        .tabs-bar {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--surface-border);
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 145px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(148, 163, 184, 0.12);
+        }
+
+        .tab-btn.active {
+            background: var(--accent-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+        }
+
+        .tab-panel {
+            display: none;
+            padding: 24px;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* ==========================================================================
+           VISOR DE SENHA GERADA & BARRA DE FORÇA
+           ========================================================================== */
+        .password-display-box {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #172554 100%);
+            border: 1px solid #334155;
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            color: #f8fafc;
+            margin-bottom: 24px;
+        }
+
+        .display-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .display-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #93c5fd;
+        }
+
+        .badge-pill {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.16);
+            color: #7dd3fc;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .password-field-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(2, 6, 23, 0.65);
+            border: 1px solid #475569;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 16px;
+        }
+
+        .password-output-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font-mono);
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.04em;
+        }
+
+        @media (max-width: 600px) {
+            .password-output-input {
+                font-size: 1.05rem;
+            }
+            .password-field-wrapper {
+                flex-wrap: wrap;
+            }
+        }
+
+        .display-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        /* Barra de Força Animada */
+        .strength-section {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid #334155;
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+        }
+
+        .strength-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .strength-title {
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .strength-badge-text {
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .strength-metrics {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #93c5fd;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 10px;
+            background: #020617;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s ease;
+        }
+
+        /* Telemetria CSPRNG & Rejection Sampling */
+        .csprng-telemetry {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(148, 163, 184, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.74rem;
+            color: #94a3b8;
+        }
+
+        .csprng-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #7dd3fc;
+            font-weight: 600;
+        }
+
+        .csprng-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+
+        .csprng-stats {
+            font-family: var(--font-mono);
+            color: #cbd5e1;
+        }
+
+        /* ==========================================================================
+           CONTROLES DE CONFIGURAÇÃO DO GERADOR
+           ========================================================================== */
+        .section-block {
+            margin-bottom: 24px;
+        }
+
+        .section-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        /* Presets de Complexidade */
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 640px) {
+            .presets-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .preset-card {
+            padding: 12px 10px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--surface-border);
+            background: var(--surface-alt);
+            color: var(--text-primary);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-card:hover {
+            border-color: var(--accent-color);
+        }
+
+        .preset-card.active {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+        }
+
+        .preset-card strong {
+            display: block;
+            font-size: 0.88rem;
+            margin-bottom: 2px;
+        }
+
+        .preset-card span {
+            font-size: 0.74rem;
+            opacity: 0.85;
+        }
+
+        /* Interruptor de Modo (Proporcional vs Quantidade Exata) */
+        .mode-switch-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mode-switch-info strong {
+            display: block;
+            font-size: 0.92rem;
+            color: var(--text-primary);
+        }
+
+        .mode-switch-info small {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            user-select: none;
+        }
+
+        .toggle-input {
+            appearance: none;
+            width: 48px;
+            height: 26px;
+            background: #94a3b8;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-input::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.25s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-input:checked {
+            background: #1d4ed8;
+        }
+
+        .toggle-input:checked::after {
+            transform: translateX(22px);
+        }
+
+        /* Controle de Tamanho Total */
+        .length-control-box {
+            padding: 16px 18px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+            margin-bottom: 20px;
+        }
+
+        .length-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .length-slider {
+            flex: 1;
+            accent-color: #1d4ed8;
+            height: 6px;
+            cursor: pointer;
+        }
+
+        .length-slider:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .number-box {
+            width: 74px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--input-border);
+            background: var(--surface-bg);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .number-box:disabled {
+            opacity: 0.7;
+            background: var(--surface-alt);
+        }
+
+        /* Grid de Categorias de Caracteres */
+        .charsets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width: 640px) {
+            .charsets-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .charset-card {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1.5px solid var(--surface-border);
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .charset-card.enabled {
+            border-color: var(--accent-border);
+            background: var(--surface-bg);
+        }
+
+        .charset-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .charset-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .charset-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--accent-soft);
+            color: var(--accent-color);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .charset-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .charset-chars {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .charset-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #1d4ed8;
+            cursor: pointer;
+        }
+
+        /* Controles de Quantidade Exata dentro de cada Card */
+        .exact-stepper {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--surface-border);
+        }
+
+        .exact-stepper.visible {
+            display: flex;
+        }
+
+        .stepper-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .stepper-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stepper-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--surface-border);
+            background: var(--surface-alt);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .stepper-btn:hover {
+            background: var(--accent-color);
+            color: #ffffff;
+            border-color: var(--accent-color);
+        }
+
+        .stepper-input {
+            width: 54px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* ==========================================================================
+           ABA 2: TESTE DE FORÇA
+           ========================================================================== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--accent-color);
+        }
+
+        .text-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .audit-summary-card {
+            padding: 20px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+            margin-bottom: 20px;
+        }
+
+        .audit-score-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .score-pill {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-soft);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-border);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-box {
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            background: var(--surface-bg);
+            border: 1px solid var(--surface-border);
+            text-align: center;
+        }
+
+        .stat-box strong {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            color: var(--accent-color);
+        }
+
+        .stat-box span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .checklist-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .check-item.passed {
+            border-color: #38bdf8;
+            background: var(--accent-soft);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .check-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #94a3b8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .check-item.passed .check-dot {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+
+        /* ==========================================================================
+           ABA 3: GERADOR DE HASH
+           ========================================================================== */
+        .hash-controls-row {
+            display: grid;
+            grid-template-columns: 1fr 220px;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .hash-controls-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .select-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .hash-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .hash-card {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+        }
+
+        .hash-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .hash-alg-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: var(--text-primary);
+        }
+
+        .hash-bits-tag {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--accent-soft);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-border);
+        }
+
+        .hash-digest-box {
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            background: var(--surface-bg);
+            border: 1px solid var(--surface-border);
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            word-break: break-all;
+            user-select: all;
+            line-height: 1.45;
+        }
+
+        /* ==========================================================================
+           COLUNA LATERAL: HISTÓRICO DAS 20 ÚLTIMAS SENHAS
+           ========================================================================== */
+        .history-card {
+            position: sticky;
+            top: 92px;
+        }
+
+        .history-header {
+            padding: 18px 20px;
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--surface-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .history-title-group h2 {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-title-group p {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .count-badge {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--accent-gradient);
+            color: #ffffff;
+        }
+
+        .history-body {
+            padding: 16px;
+            max-height: 620px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: border-color 0.2s ease;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent-color);
+        }
+
+        .history-item-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .history-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 0.74rem;
+        }
+
+        .strength-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .history-pwd-text {
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+
+        .history-time {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .history-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 36px 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* ==========================================================================
+           MODAL DE SENHAS SUPER FORTES
+           ========================================================================== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-dialog {
+            width: 100%;
+            max-width: 680px;
+            background: var(--surface-bg);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: var(--header-bg);
+            color: #ffffff;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .modal-header p {
+            font-size: 0.78rem;
+            color: #93c5fd;
+            margin-top: 2px;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .super-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .super-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .super-item {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            border: 1px solid var(--surface-border);
+        }
+
+        .super-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .super-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .super-code {
+            font-family: var(--font-mono);
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            word-break: break-all;
+            user-select: all;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            background: var(--surface-alt);
+            border-top: 1px solid var(--surface-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           NOTIFICAÇÃO TOAST
+           ========================================================================== */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #1e293b 0%, #1d4ed8 100%);
+            color: #ffffff;
+            padding: 12px 18px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(147, 197, 253, 0.4);
+            z-index: 200;
+            opacity: 0;
+            transform: translateY(12px);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ======================================================================
+         CABEÇALHO PRINCIPAL
+         ====================================================================== -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <div class="brand-logo" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="m9 12 2 2 4-4"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-title">VaultBlue</div>
+                    <div class="brand-subtitle">Gerenciador, Gerador &amp; Auditor Criptográfico</div>
+                </div>
+            </div>
+
+            <div class="topbar-actions">
+                <button type="button" id="btnOpenSuperModal" class="btn btn-super">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>Gerar Senhas Super Fortes</span>
+                </button>
+
+                <button type="button" id="btnToggleTheme" class="btn btn-theme" title="Alternar entre Modo Claro e Modo Escuro">
+                    <svg id="iconTheme" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <span id="labelTheme">Modo Escuro</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ======================================================================
+         CONTEÚDO PRINCIPAL (2 COLUNAS)
+         ====================================================================== -->
+    <main class="container">
+        <div class="main-grid">
+
+            <!-- COLUNA ESQUERDA: FERRAMENTAS COM ABAS -->
+            <section class="card">
+                <!-- Barra de Abas -->
+                <nav class="tabs-bar" role="tablist">
+                    <button type="button" class="tab-btn active" data-tab="generator" role="tab" aria-selected="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                            <path d="m21 2-9.6 9.6"></path>
+                            <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+                        </svg>
+                        <span>Gerador de Senhas</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="tester" role="tab" aria-selected="false">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <span>Teste de Força</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="hash" role="tab" aria-selected="false">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>
+                        <span>Gerador de Hash</span>
+                    </button>
+                </nav>
+
+                <!-- ============================================================
+                     ABA 1: GERADOR DE SENHAS
+                     ============================================================ -->
+                <div id="panel-generator" class="tab-panel active">
+
+                    <!-- Visor Principal da Senha -->
+                    <div class="password-display-box">
+                        <div class="display-top-row">
+                            <span class="display-label">Senha Criptográfica Gerada</span>
+                            <span id="genModeBadge" class="badge-pill">Modo Proporcional</span>
+                        </div>
+
+                        <div class="password-field-wrapper">
+                            <input type="text" id="generatedPasswordOutput" class="password-output-input" readonly aria-label="Senha gerada">
+                            <button type="button" id="btnToggleGenMask" class="btn btn-theme btn-icon" title="Mostrar ou Ocultar Senha">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="display-actions">
+                            <button type="button" id="btnCopyGenerated" class="btn btn-primary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span id="btnCopyGeneratedText">Copiar Senha</span>
+                            </button>
+
+                            <button type="button" id="btnRegenerate" class="btn btn-theme">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                                <span>Gerar Nova</span>
+                            </button>
+
+                            <button type="button" id="btnSendGenToHash" class="btn btn-theme">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                                </svg>
+                                <span>Gerar Hash desta Senha</span>
+                            </button>
+                        </div>
+
+                        <!-- Barra de Força Animada -->
+                        <div class="strength-section">
+                            <div class="strength-header">
+                                <div>
+                                    <span class="strength-title">Nível de Segurança:</span>
+                                    <span id="genStrengthLabel" class="strength-badge-text">—</span>
+                                </div>
+                                <div id="genStrengthMetrics" class="strength-metrics">0 bits • —</div>
+                            </div>
+                            <div class="progress-track">
+                                <div id="genStrengthBar" class="progress-fill"></div>
+                            </div>
+                            <div class="csprng-telemetry" title="Amostragem por rejeição elimina o viés de módulo sobre inteiros de 32 bits do CSPRNG">
+                                <span class="csprng-badge">
+                                    <span class="csprng-dot"></span>
+                                    <span>CSPRNG + Rejection Sampling (Sem viés de módulo)</span>
+                                </span>
+                                <span id="csprngStatsText" class="csprng-stats">Amostras: 0 • Rejeitadas: 0 • Eficiência: 100%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nível de Complexidade (Presets) -->
+                    <div class="section-block">
+                        <div class="section-header-row">
+                            <h3 class="section-title">Nível de Complexidade</h3>
+                        </div>
+                        <div class="presets-grid" id="presetsContainer">
+                            <button type="button" class="preset-card" data-preset="basic">
+                                <strong>Básica</strong>
+                                <span>8 chars • Letras</span>
+                            </button>
+                            <button type="button" class="preset-card" data-preset="intermediate">
+                                <strong>Intermediária</strong>
+                                <span>12 chars • Letras + Núm</span>
+                            </button>
+                            <button type="button" class="preset-card active" data-preset="advanced">
+                                <strong>Avançada</strong>
+                                <span>16 chars • Completa</span>
+                            </button>
+                            <button type="button" class="preset-card" data-preset="maximum">
+                                <strong>Máxima</strong>
+                                <span>32 chars • Ultra Forte</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interruptor de Modo: Proporcional vs Quantidade Exata -->
+                    <div class="mode-switch-box">
+                        <div class="mode-switch-info">
+                            <strong>Modo Quantidade Exata por Categoria</strong>
+                            <small>Defina exatamente quantas letras, números e caracteres especiais a senha terá.</small>
+                        </div>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="toggleExactMode" class="toggle-input">
+                            <span id="exactModeStatusText">Desativado</span>
+                        </label>
+                    </div>
+
+                    <!-- Tamanho Total da Senha -->
+                    <div class="length-control-box">
+                        <div class="section-header-row" style="margin-bottom: 0;">
+                            <span class="section-title" id="lengthBoxTitle">Tamanho Total da Senha (6 a 64 caracteres)</span>
+                            <span style="font-size: 0.78rem; color: var(--text-muted);" id="lengthBoxHint">Ajuste pelo controle ou número</span>
+                        </div>
+                        <div class="length-row">
+                            <input type="range" id="lengthSlider" class="length-slider" min="6" max="64" value="16">
+                            <input type="number" id="lengthNumber" class="number-box" min="6" max="64" value="16">
+                        </div>
+                    </div>
+
+                    <!-- Seleção de Categorias e Quantidades Específicas -->
+                    <div class="section-block">
+                        <div class="section-header-row">
+                            <h3 class="section-title">Conjunto de Caracteres Permitidos</h3>
+                        </div>
+
+                        <div class="charsets-grid">
+                            <!-- Letras Maiúsculas A-Z -->
+                            <div class="charset-card enabled" id="card-upper">
+                                <div class="charset-top">
+                                    <div class="charset-meta">
+                                        <div class="charset-badge">A-Z</div>
+                                        <div>
+                                            <div class="charset-title">Letras Maiúsculas</div>
+                                            <div class="charset-chars">ABCDEFGHIJKLMNOPQRSTUVWXYZ</div>
+                                        </div>
+                                    </div>
+                                    <input type="checkbox" id="chkUpper" class="charset-checkbox" checked>
+                                </div>
+                                <div class="exact-stepper" id="stepper-upper">
+                                    <span class="stepper-label">Quantidade exata:</span>
+                                    <div class="stepper-controls">
+                                        <button type="button" class="stepper-btn" data-target="qtyUpper" data-step="-1">-</button>
+                                        <input type="number" id="qtyUpper" class="stepper-input" min="0" max="64" value="4">
+                                        <button type="button" class="stepper-btn" data-target="qtyUpper" data-step="1">+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Letras Minúsculas a-z -->
+                            <div class="charset-card enabled" id="card-lower">
+                                <div class="charset-top">
+                                    <div class="charset-meta">
+                                        <div class="charset-badge">a-z</div>
+                                        <div>
+                                            <div class="charset-title">Letras Minúsculas</div>
+                                            <div class="charset-chars">abcdefghijklmnopqrstuvwxyz</div>
+                                        </div>
+                                    </div>
+                                    <input type="checkbox" id="chkLower" class="charset-checkbox" checked>
+                                </div>
+                                <div class="exact-stepper" id="stepper-lower">
+                                    <span class="stepper-label">Quantidade exata:</span>
+                                    <div class="stepper-controls">
+                                        <button type="button" class="stepper-btn" data-target="qtyLower" data-step="-1">-</button>
+                                        <input type="number" id="qtyLower" class="stepper-input" min="0" max="64" value="6">
+                                        <button type="button" class="stepper-btn" data-target="qtyLower" data-step="1">+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Números 0-9 -->
+                            <div class="charset-card enabled" id="card-numbers">
+                                <div class="charset-top">
+                                    <div class="charset-meta">
+                                        <div class="charset-badge">0-9</div>
+                                        <div>
+                                            <div class="charset-title">Números</div>
+                                            <div class="charset-chars">0123456789</div>
+                                        </div>
+                                    </div>
+                                    <input type="checkbox" id="chkNumbers" class="charset-checkbox" checked>
+                                </div>
+                                <div class="exact-stepper" id="stepper-numbers">
+                                    <span class="stepper-label">Quantidade exata:</span>
+                                    <div class="stepper-controls">
+                                        <button type="button" class="stepper-btn" data-target="qtyNumbers" data-step="-1">-</button>
+                                        <input type="number" id="qtyNumbers" class="stepper-input" min="0" max="64" value="3">
+                                        <button type="button" class="stepper-btn" data-target="qtyNumbers" data-step="1">+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Caracteres Especiais */!@#$%&+- -->
+                            <div class="charset-card enabled" id="card-symbols">
+                                <div class="charset-top">
+                                    <div class="charset-meta">
+                                        <div class="charset-badge">#$</div>
+                                        <div>
+                                            <div class="charset-title">Caracteres Especiais</div>
+                                            <div class="charset-chars">*/!@#$%&amp;+-</div>
+                                        </div>
+                                    </div>
+                                    <input type="checkbox" id="chkSymbols" class="charset-checkbox" checked>
+                                </div>
+                                <div class="exact-stepper" id="stepper-symbols">
+                                    <span class="stepper-label">Quantidade exata:</span>
+                                    <div class="stepper-controls">
+                                        <button type="button" class="stepper-btn" data-target="qtySymbols" data-step="-1">-</button>
+                                        <input type="number" id="qtySymbols" class="stepper-input" min="0" max="64" value="3">
+                                        <button type="button" class="stepper-btn" data-target="qtySymbols" data-step="1">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btnMainGenerate" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v4"></path>
+                            <path d="m16.2 7.8 2.9-2.9"></path>
+                            <path d="M18 12h4"></path>
+                            <path d="m16.2 16.2 2.9 2.9"></path>
+                            <path d="M12 18v4"></path>
+                            <path d="m4.9 19.1 2.9-2.9"></path>
+                            <path d="M2 12h4"></path>
+                            <path d="m4.9 4.9 2.9 2.9"></path>
+                        </svg>
+                        <span>Gerar Nova Senha Segura</span>
+                    </button>
+                </div>
+
+                <!-- ============================================================
+                     ABA 2: TESTE DE FORÇA DA SENHA
+                     ============================================================ -->
+                <div id="panel-tester" class="tab-panel">
+                    <div class="form-group">
+                        <label for="testerPasswordInput" class="form-label">Digite ou cole uma senha para auditar sua força</label>
+                        <div class="input-group">
+                            <input type="text" id="testerPasswordInput" class="text-input" placeholder="Ex: Abc@1234#Xyz99">
+                            <button type="button" id="btnToggleTesterMask" class="btn btn-secondary btn-icon" title="Mostrar ou Ocultar">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                            <button type="button" id="btnClearTester" class="btn btn-secondary" style="padding: 8px 12px;">Limpar</button>
+                        </div>
+                    </div>
+
+                    <div class="audit-summary-card">
+                        <div class="audit-score-row">
+                            <div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Classificação de Segurança</div>
+                                <div id="testerClassification" style="font-size: 1.2rem; font-weight: 800;">Aguardando entrada...</div>
+                            </div>
+                            <div class="score-pill" id="testerScorePill">Nota: 0 / 100</div>
+                        </div>
+
+                        <div class="progress-track" style="height: 12px; margin-bottom: 10px;">
+                            <div id="testerStrengthBar" class="progress-fill"></div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-secondary); font-family: var(--font-mono);">
+                            <span id="testerEntropyText">Entropia: 0 bits</span>
+                            <span id="testerCrackText">Tempo de quebra: —</span>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong id="countUpper">0</strong>
+                                <span>Maiúsculas (A-Z)</span>
+                            </div>
+                            <div class="stat-box">
+                                <strong id="countLower">0</strong>
+                                <span>Minúsculas (a-z)</span>
+                            </div>
+                            <div class="stat-box">
+                                <strong id="countNumbers">0</strong>
+                                <span>Números (0-9)</span>
+                            </div>
+                            <div class="stat-box">
+                                <strong id="countSymbols">0</strong>
+                                <span>Especiais (*/!@#$%&amp;+-)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-block">
+                        <div class="section-header-row">
+                            <h3 class="section-title">Checklist de Requisitos Criptográficos</h3>
+                        </div>
+                        <div class="checklist-grid">
+                            <div class="check-item" id="chkReqLength">
+                                <span class="check-dot">&#10003;</span>
+                                <span>Mínimo de 12 caracteres</span>
+                            </div>
+                            <div class="check-item" id="chkReqUpper">
+                                <span class="check-dot">&#10003;</span>
+                                <span>Contém letras maiúsculas (A-Z)</span>
+                            </div>
+                            <div class="check-item" id="chkReqLower">
+                                <span class="check-dot">&#10003;</span>
+                                <span>Contém letras minúsculas (a-z)</span>
+                            </div>
+                            <div class="check-item" id="chkReqNumbers">
+                                <span class="check-dot">&#10003;</span>
+                                <span>Contém números (0-9)</span>
+                            </div>
+                            <div class="check-item" id="chkReqSymbols">
+                                <span class="check-dot">&#10003;</span>
+                                <span>Contém especiais (*/!@#$%&amp;+-)</span>
+                            </div>
+                            <div class="check-item" id="chkReqNoRepeat">
+                                <span class="check-dot">&#10003;</span>
+                                <span>Sem sequências repetidas (ex: aaa)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================
+                     ABA 3: GERADOR DE HASH CRIPTOGRÁFICO
+                     ============================================================ -->
+                <div id="panel-hash" class="tab-panel">
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; flex-wrap: wrap;">
+                            <label for="hashSourceInput" class="form-label" style="margin-bottom: 0;">Texto ou Senha de Entrada</label>
+                            <button type="button" id="btnLoadCurrentPwdToHash" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.78rem;">
+                                Carregar Senha Gerada Atual
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="hashSourceInput" class="text-input" placeholder="Digite a senha ou texto para calcular os hashes...">
+                            <button type="button" id="btnClearHashInput" class="btn btn-secondary" style="padding: 8px 12px;">Limpar</button>
+                        </div>
+                    </div>
+
+                    <div class="hash-controls-row">
+                        <div>
+                            <label for="hashSaltInput" class="form-label">Salt Opcional (Tempero Criptográfico)</label>
+                            <div class="input-group" style="padding: 6px 10px;">
+                                <input type="text" id="hashSaltInput" class="text-input" style="font-size: 0.88rem;" placeholder="Ex: meu_salt_secreto">
+                                <button type="button" id="btnRandomSalt" class="btn btn-primary" style="padding: 6px 10px; font-size: 0.76rem;">
+                                    Salt Aleatório
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="hashFormatSelect" class="form-label">Formato de Saída</label>
+                            <select id="hashFormatSelect" class="select-input">
+                                <option value="hex-lower">Hexadecimal (minúsculo)</option>
+                                <option value="hex-upper">Hexadecimal (MAIÚSCULO)</option>
+                                <option value="base64">Base64</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="hashResultsList" class="hash-list">
+                        <!-- Preenchido dinamicamente pelo JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUNA DIREITA: HISTÓRICO DAS 20 ÚLTIMAS SENHAS ÚNICAS -->
+            <aside class="card history-card">
+                <div class="history-header">
+                    <div class="history-title-group">
+                        <h2>
+                            <span>Histórico Recente</span>
+                            <span class="count-badge" id="historyCounterBadge">0/20</span>
+                        </h2>
+                        <p>Últimas 20 senhas únicas (sem repetições)</p>
+                    </div>
+                    <button type="button" id="btnClearHistory" class="btn btn-danger-outline" title="Apagar todo o histórico">
+                        Limpar Histórico
+                    </button>
+                </div>
+
+                <div class="history-body" id="historyListContainer">
+                    <!-- Preenchido dinamicamente pelo JS -->
+                </div>
+            </aside>
+
+        </div>
+    </main>
+
+    <!-- ======================================================================
+         MODAL: GERADOR DE SENHAS SUPER FORTES
+         ====================================================================== -->
+    <div id="superModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="superModalTitle">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h3 id="superModalTitle">Gerador de Senhas Super Fortes</h3>
+                    <p>Combinação obrigatória de A-Z, a-z, 0-9 e */!@#$%&amp;+- com máxima entropia.</p>
+                </div>
+                <button type="button" id="btnCloseSuperModalTop" class="btn btn-theme btn-icon" aria-label="Fechar janela">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="super-toolbar">
+                    <div>
+                        <strong style="font-size: 0.88rem; display: block;">Comprimento da Chave Ultra Forte</strong>
+                        <span style="font-size: 0.78rem; color: var(--text-muted);">Gera 5 opções inéditas garantidas contra repetição.</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="superLengthSelect" class="select-input" style="width: auto; padding: 8px 12px;">
+                            <option value="24">24 caracteres</option>
+                            <option value="32" selected>32 caracteres</option>
+                            <option value="48">48 caracteres</option>
+                            <option value="64">64 caracteres</option>
+                        </select>
+                        <button type="button" id="btnRefreshSuperBatch" class="btn btn-primary">
+                            Gerar Novo Lote
+                        </button>
+                    </div>
+                </div>
+
+                <div id="superPasswordsContainer" class="super-list">
+                    <!-- 5 senhas super fortes renderizadas aqui -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span>Ao copiar, a senha é salva automaticamente no histórico.</span>
+                <button type="button" id="btnCloseSuperModalBottom" class="btn btn-secondary">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Feedback -->
+    <div id="toastNotification" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- ======================================================================
+         LÓGICA JAVASCRIPT PURA (100% AUTOCONTIDA)
+         ====================================================================== -->
+    <script>
+        (function () {
+            "use strict";
+
+            /* ------------------------------------------------------------------
+               1. CONSTANTES E CONJUNTOS DE CARACTERES EXATOS
+               ------------------------------------------------------------------ */
+            const CHARSETS = {
+                upper: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                lower: "abcdefghijklmnopqrstuvwxyz",
+                numbers: "0123456789",
+                symbols: "*/!@#$%&+-"
+            };
+
+            const STORAGE_HISTORY_KEY = "vaultblue_history_v2";
+            const STORAGE_THEME_KEY = "vaultblue_theme_v2";
+            const MAX_HISTORY_ITEMS = 20;
+
+            /* ------------------------------------------------------------------
+               2. ESTADO DA APLICAÇÃO
+               ------------------------------------------------------------------ */
+            let passwordHistory = loadHistoryFromStorage();
+            let isGeneratedMasked = false;
+            let isTesterMasked = false;
+            let decodeTimer = null;
+
+            /* ------------------------------------------------------------------
+               3. REFERÊNCIAS DO DOM
+               ------------------------------------------------------------------ */
+            const bodyEl = document.body;
+            const btnToggleTheme = document.getElementById("btnToggleTheme");
+            const labelTheme = document.getElementById("labelTheme");
+            const iconTheme = document.getElementById("iconTheme");
+
+            // Abas
+            const tabButtons = document.querySelectorAll(".tab-btn");
+            const tabPanels = {
+                generator: document.getElementById("panel-generator"),
+                tester: document.getElementById("panel-tester"),
+                hash: document.getElementById("panel-hash")
+            };
+
+            // Gerador
+            const genOutput = document.getElementById("generatedPasswordOutput");
+            const genModeBadge = document.getElementById("genModeBadge");
+            const btnToggleGenMask = document.getElementById("btnToggleGenMask");
+            const btnCopyGenerated = document.getElementById("btnCopyGenerated");
+            const btnCopyGeneratedText = document.getElementById("btnCopyGeneratedText");
+            const btnRegenerate = document.getElementById("btnRegenerate");
+            const btnSendGenToHash = document.getElementById("btnSendGenToHash");
+            const btnMainGenerate = document.getElementById("btnMainGenerate");
+
+            const genStrengthLabel = document.getElementById("genStrengthLabel");
+            const genStrengthMetrics = document.getElementById("genStrengthMetrics");
+            const genStrengthBar = document.getElementById("genStrengthBar");
+            const csprngStatsText = document.getElementById("csprngStatsText");
+
+            const presetCards = document.querySelectorAll(".preset-card");
+            const toggleExactMode = document.getElementById("toggleExactMode");
+            const exactModeStatusText = document.getElementById("exactModeStatusText");
+
+            const lengthSlider = document.getElementById("lengthSlider");
+            const lengthNumber = document.getElementById("lengthNumber");
+            const lengthBoxTitle = document.getElementById("lengthBoxTitle");
+            const lengthBoxHint = document.getElementById("lengthBoxHint");
+
+            const chkUpper = document.getElementById("chkUpper");
+            const chkLower = document.getElementById("chkLower");
+            const chkNumbers = document.getElementById("chkNumbers");
+            const chkSymbols = document.getElementById("chkSymbols");
+
+            const qtyUpper = document.getElementById("qtyUpper");
+            const qtyLower = document.getElementById("qtyLower");
+            const qtyNumbers = document.getElementById("qtyNumbers");
+            const qtySymbols = document.getElementById("qtySymbols");
+
+            // Teste de Força
+            const testerInput = document.getElementById("testerPasswordInput");
+            const btnToggleTesterMask = document.getElementById("btnToggleTesterMask");
+            const btnClearTester = document.getElementById("btnClearTester");
+            const testerClassification = document.getElementById("testerClassification");
+            const testerScorePill = document.getElementById("testerScorePill");
+            const testerStrengthBar = document.getElementById("testerStrengthBar");
+            const testerEntropyText = document.getElementById("testerEntropyText");
+            const testerCrackText = document.getElementById("testerCrackText");
+
+            // Hash
+            const hashSourceInput = document.getElementById("hashSourceInput");
+            const hashSaltInput = document.getElementById("hashSaltInput");
+            const hashFormatSelect = document.getElementById("hashFormatSelect");
+            const hashResultsList = document.getElementById("hashResultsList");
+
+            // Histórico
+            const historyCounterBadge = document.getElementById("historyCounterBadge");
+            const historyListContainer = document.getElementById("historyListContainer");
+            const btnClearHistory = document.getElementById("btnClearHistory");
+
+            // Modal Super Fortes
+            const superModalBackdrop = document.getElementById("superModalBackdrop");
+            const superLengthSelect = document.getElementById("superLengthSelect");
+            const superPasswordsContainer = document.getElementById("superPasswordsContainer");
+
+            // Toast
+            const toastEl = document.getElementById("toastNotification");
+            let toastTimeout = null;
+
+            /* ------------------------------------------------------------------
+               4. UTILITÁRIOS CRIPTOGRÁFICOS (UNBIASED REJECTION SAMPLING)
+               ------------------------------------------------------------------ */
+            const samplingTelemetry = {
+                sampled: 0,
+                rejected: 0
+            };
+
+            function resetSamplingTelemetry() {
+                samplingTelemetry.sampled = 0;
+                samplingTelemetry.rejected = 0;
+            }
+
+            function getSamplingStats() {
+                const total = samplingTelemetry.sampled;
+                const rejected = samplingTelemetry.rejected;
+                const accepted = Math.max(0, total - rejected);
+                const efficiency = total > 0 ? ((accepted / total) * 100).toFixed(1) : "100.0";
+                return {
+                    sampled: total,
+                    rejected: rejected,
+                    accepted: accepted,
+                    efficiency: efficiency
+                };
+            }
+
+            /**
+             * Gera um inteiro criptograficamente seguro e uniforme em [0, max)
+             * usando Rejection Sampling sobre uint32 para eliminar qualquer viés de módulo.
+             */
+            function secureRandomInt(max) {
+                if (!Number.isInteger(max) || max <= 0) {
+                    throw new RangeError("O parâmetro max deve ser um inteiro positivo.");
+                }
+                if (max > 0x100000000) {
+                    throw new RangeError("O parâmetro max excede 2^32.");
+                }
+                if (max === 1) {
+                    return 0;
+                }
+
+                // Maior múltiplo de `max` que cabe em 2^32 (4.294.967.296)
+                const uint32Range = 0x100000000;
+                const limit = Math.floor(uint32Range / max) * max;
+                const buffer = new Uint32Array(1);
+                let randomValue;
+
+                do {
+                    window.crypto.getRandomValues(buffer);
+                    randomValue = buffer[0];
+                    samplingTelemetry.sampled++;
+                    if (randomValue >= limit) {
+                        samplingTelemetry.rejected++;
+                    }
+                } while (randomValue >= limit);
+
+                return randomValue % max;
+            }
+
+            /**
+             * Embaralhamento Fisher-Yates imparcial utilizando Rejection Sampling.
+             */
+            function secureShuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = secureRandomInt(i + 1);
+                    const temp = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = temp;
+                }
+                return arr;
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement("div");
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function showToast(message) {
+                toastEl.textContent = message;
+                toastEl.classList.add("show");
+                if (toastTimeout) clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(function () {
+                    toastEl.classList.remove("show");
+                }, 2600);
+            }
+
+            function copyTextToClipboard(text, successMsg) {
+                if (!text) return;
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand("copy");
+                    showToast(successMsg || "Copiado com sucesso!");
+                } catch (err) {
+                    showToast("Erro ao copiar para a área de transferência.");
+                }
+                document.body.removeChild(textarea);
+            }
+
+            /* ------------------------------------------------------------------
+               5. TEMA CLARO / ESCURO
+               ------------------------------------------------------------------ */
+            function applyTheme(theme) {
+                if (theme === "dark") {
+                    bodyEl.classList.add("dark-mode");
+                    labelTheme.textContent = "Modo Claro";
+                    iconTheme.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+                } else {
+                    bodyEl.classList.remove("dark-mode");
+                    labelTheme.textContent = "Modo Escuro";
+                    iconTheme.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+                }
+            }
+
+            const savedTheme = localStorage.getItem(STORAGE_THEME_KEY) || "light";
+            applyTheme(savedTheme);
+
+            btnToggleTheme.addEventListener("click", function () {
+                const nextTheme = bodyEl.classList.contains("dark-mode") ? "light" : "dark";
+                localStorage.setItem(STORAGE_THEME_KEY, nextTheme);
+                applyTheme(nextTheme);
+            });
+
+            /* ------------------------------------------------------------------
+               6. NAVEGAÇÃO ENTRE ABAS
+               ------------------------------------------------------------------ */
+            function activateTab(tabName) {
+                tabButtons.forEach(function (btn) {
+                    const isMatch = btn.getAttribute("data-tab") === tabName;
+                    btn.classList.toggle("active", isMatch);
+                    btn.setAttribute("aria-selected", isMatch ? "true" : "false");
+                });
+
+                Object.keys(tabPanels).forEach(function (key) {
+                    tabPanels[key].classList.toggle("active", key === tabName);
+                });
+
+                if (tabName === "hash") {
+                    if (!hashSourceInput.value && genOutput.value) {
+                        hashSourceInput.value = genOutput.value;
+                    }
+                    updateAllHashes();
+                }
+            }
+
+            tabButtons.forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    activateTab(btn.getAttribute("data-tab"));
+                });
+            });
+
+            /* ------------------------------------------------------------------
+               7. MOTOR DE GERAÇÃO DE SENHAS (PROPORCIONAL & QUANTIDADE EXATA)
+               ------------------------------------------------------------------ */
+            function createPasswordString(config) {
+                const chars = [];
+
+                if (config.exactMode) {
+                    // Modo Quantidade Exata: adiciona exatamente N caracteres de cada tipo ativo via Rejection Sampling
+                    if (config.upper) {
+                        for (let i = 0; i < config.counts.upper; i++) {
+                            chars.push(CHARSETS.upper[secureRandomInt(CHARSETS.upper.length)]);
+                        }
+                    }
+                    if (config.lower) {
+                        for (let i = 0; i < config.counts.lower; i++) {
+                            chars.push(CHARSETS.lower[secureRandomInt(CHARSETS.lower.length)]);
+                        }
+                    }
+                    if (config.numbers) {
+                        for (let i = 0; i < config.counts.numbers; i++) {
+                            chars.push(CHARSETS.numbers[secureRandomInt(CHARSETS.numbers.length)]);
+                        }
+                    }
+                    if (config.symbols) {
+                        for (let i = 0; i < config.counts.symbols; i++) {
+                            chars.push(CHARSETS.symbols[secureRandomInt(CHARSETS.symbols.length)]);
+                        }
+                    }
+                    if (chars.length === 0) return "";
+                    return secureShuffle(chars).join("");
+                }
+
+                // Modo Proporcional (Tamanho Total)
+                let pool = "";
+                const guaranteed = [];
+
+                if (config.upper) {
+                    pool += CHARSETS.upper;
+                    guaranteed.push(CHARSETS.upper[secureRandomInt(CHARSETS.upper.length)]);
+                }
+                if (config.lower) {
+                    pool += CHARSETS.lower;
+                    guaranteed.push(CHARSETS.lower[secureRandomInt(CHARSETS.lower.length)]);
+                }
+                if (config.numbers) {
+                    pool += CHARSETS.numbers;
+                    guaranteed.push(CHARSETS.numbers[secureRandomInt(CHARSETS.numbers.length)]);
+                }
+                if (config.symbols) {
+                    pool += CHARSETS.symbols;
+                    guaranteed.push(CHARSETS.symbols[secureRandomInt(CHARSETS.symbols.length)]);
+                }
+
+                if (!pool) return "";
+
+                const targetLength = Math.max(6, Math.min(64, config.totalLength));
+                const initial = guaranteed.slice(0, targetLength);
+                chars.push.apply(chars, initial);
+
+                while (chars.length < targetLength) {
+                    chars.push(pool[secureRandomInt(pool.length)]);
+                }
+
+                return secureShuffle(chars).join("");
+            }
+
+            function generateNonRepeatingPassword(config) {
+                const existingPasswords = new Set(passwordHistory.map(function (item) {
+                    return item.password;
+                }));
+
+                let candidate = "";
+                let tries = 0;
+                while (tries < 120) {
+                    candidate = createPasswordString(config);
+                    if (!existingPasswords.has(candidate)) {
+                        break;
+                    }
+                    tries++;
+                }
+                return candidate;
+            }
+
+            /* ------------------------------------------------------------------
+               8. AVALIADOR DE FORÇA, ENTROPIA E TEMPO DE QUEBRA
+               ------------------------------------------------------------------ */
+            function analyzePasswordStrength(pwd) {
+                if (!pwd || pwd.length === 0) {
+                    return {
+                        score: 0,
+                        percent: 0,
+                        label: "Aguardando senha...",
+                        color: "#64748b",
+                        gradient: "linear-gradient(90deg, #64748b, #94a3b8)",
+                        entropy: 0,
+                        crackTime: "—",
+                        counts: { upper: 0, lower: 0, numbers: 0, symbols: 0 },
+                        checks: {
+                            length12: false,
+                            upper: false,
+                            lower: false,
+                            numbers: false,
+                            symbols: false,
+                            noRepeat: false
+                        }
+                    };
+                }
+
+                let upperCount = 0;
+                let lowerCount = 0;
+                let numCount = 0;
+                let symCount = 0;
+                let otherSymCount = 0;
+
+                for (let i = 0; i < pwd.length; i++) {
+                    const ch = pwd[i];
+                    if (CHARSETS.upper.indexOf(ch) !== -1) upperCount++;
+                    else if (CHARSETS.lower.indexOf(ch) !== -1) lowerCount++;
+                    else if (CHARSETS.numbers.indexOf(ch) !== -1) numCount++;
+                    else if (CHARSETS.symbols.indexOf(ch) !== -1) symCount++;
+                    else otherSymCount++;
+                }
+
+                let alphabetSize = 0;
+                if (upperCount > 0) alphabetSize += 26;
+                if (lowerCount > 0) alphabetSize += 26;
+                if (numCount > 0) alphabetSize += 10;
+                if (symCount > 0) alphabetSize += 10;
+                if (otherSymCount > 0) alphabetSize += 22;
+                if (alphabetSize === 0) alphabetSize = 26;
+
+                const rawEntropy = pwd.length * Math.log2(alphabetSize);
+                const hasRepeats = /(.)\1{2,}/.test(pwd);
+                const entropy = Math.max(0, Math.round(rawEntropy - (hasRepeats ? 12 : 0)));
+
+                // Nota de 0 a 100
+                const score = Math.min(100, Math.round((entropy / 128) * 100));
+
+                // Tempo estimado de quebra (100 bilhões de tentativas/seg)
+                const guesses = Math.pow(2, entropy);
+                const seconds = guesses / 1e11;
+                const crackTime = formatDuration(seconds);
+
+                let label = "Muito Fraca";
+                let color = "#ef4444";
+                let gradient = "linear-gradient(90deg, #dc2626, #f87171)";
+                let percent = Math.max(15, score);
+
+                if (entropy >= 115) {
+                    label = "Ultra Forte";
+                    color = "#38bdf8";
+                    gradient = "linear-gradient(90deg, #1d4ed8, #0284c7, #38bdf8)";
+                    percent = 100;
+                } else if (entropy >= 80) {
+                    label = "Forte";
+                    color = "#22d3ee";
+                    gradient = "linear-gradient(90deg, #2563eb, #06b6d4)";
+                    percent = 82;
+                } else if (entropy >= 55) {
+                    label = "Média";
+                    color = "#60a5fa";
+                    gradient = "linear-gradient(90deg, #475569, #3b82f6)";
+                    percent = 60;
+                } else if (entropy >= 36) {
+                    label = "Fraca";
+                    color = "#f59e0b";
+                    gradient = "linear-gradient(90deg, #d97706, #fbbf24)";
+                    percent = 38;
+                }
+
+                return {
+                    score: score,
+                    percent: percent,
+                    label: label,
+                    color: color,
+                    gradient: gradient,
+                    entropy: entropy,
+                    crackTime: crackTime,
+                    counts: {
+                        upper: upperCount,
+                        lower: lowerCount,
+                        numbers: numCount,
+                        symbols: symCount + otherSymCount
+                    },
+                    checks: {
+                        length12: pwd.length >= 12,
+                        upper: upperCount > 0,
+                        lower: lowerCount > 0,
+                        numbers: numCount > 0,
+                        symbols: (symCount + otherSymCount) > 0,
+                        noRepeat: !hasRepeats
+                    }
+                };
+            }
+
+            function formatDuration(seconds) {
+                if (seconds < 1) return "Instantâneo";
+                if (seconds < 60) return Math.round(seconds) + " segundos";
+                const mins = seconds / 60;
+                if (mins < 60) return Math.round(mins) + " minutos";
+                const hours = mins / 60;
+                if (hours < 24) return Math.round(hours) + " horas";
+                const days = hours / 24;
+                if (days < 365) return Math.round(days) + " dias";
+                const years = days / 365;
+                if (years < 1000) return Math.round(years) + " anos";
+                if (years < 1e6) return Math.round(years / 1000) + " mil anos";
+                if (years < 1e9) return Math.round(years / 1e6) + " milhões de anos";
+                return "Trilhões de anos+";
+            }
+
+            /* ------------------------------------------------------------------
+               9. SINCRONIZAÇÃO DOS CONTROLES DO GERADOR E EFEITO VISUAL
+               ------------------------------------------------------------------ */
+            function updateCardVisualStates() {
+                document.getElementById("card-upper").classList.toggle("enabled", chkUpper.checked);
+                document.getElementById("card-lower").classList.toggle("enabled", chkLower.checked);
+                document.getElementById("card-numbers").classList.toggle("enabled", chkNumbers.checked);
+                document.getElementById("card-symbols").classList.toggle("enabled", chkSymbols.checked);
+            }
+
+            function distributeExactCounts(total) {
+                const items = [
+                    { chk: chkUpper, input: qtyUpper },
+                    { chk: chkLower, input: qtyLower },
+                    { chk: chkNumbers, input: qtyNumbers },
+                    { chk: chkSymbols, input: qtySymbols }
+                ];
+
+                const activeItems = items.filter(function (it) { return it.chk.checked; });
+                items.forEach(function (it) { it.input.value = 0; });
+
+                if (activeItems.length === 0) return;
+
+                const base = Math.floor(total / activeItems.length);
+                let remainder = total % activeItems.length;
+
+                activeItems.forEach(function (it) {
+                    const add = remainder > 0 ? 1 : 0;
+                    if (remainder > 0) remainder--;
+                    it.input.value = base + add;
+                });
+            }
+
+            function getExactTotalSum() {
+                const u = chkUpper.checked ? (parseInt(qtyUpper.value, 10) || 0) : 0;
+                const l = chkLower.checked ? (parseInt(qtyLower.value, 10) || 0) : 0;
+                const n = chkNumbers.checked ? (parseInt(qtyNumbers.value, 10) || 0) : 0;
+                const s = chkSymbols.checked ? (parseInt(qtySymbols.value, 10) || 0) : 0;
+                return { u: u, l: l, n: n, s: s, sum: u + l + n + s };
+            }
+
+            function runPasswordGeneration(saveToHistory) {
+                const exactMode = toggleExactMode.checked;
+
+                // Garante que pelo menos 1 categoria esteja ativa
+                if (!chkUpper.checked && !chkLower.checked && !chkNumbers.checked && !chkSymbols.checked) {
+                    chkLower.checked = true;
+                    if (exactMode) qtyLower.value = 8;
+                    showToast("Pelo menos uma categoria de caracteres deve ficar ativa.");
+                }
+
+                updateCardVisualStates();
+
+                let totalLength = parseInt(lengthNumber.value, 10) || 16;
+                totalLength = Math.max(6, Math.min(64, totalLength));
+
+                let exactCounts = { upper: 0, lower: 0, numbers: 0, symbols: 0 };
+
+                if (exactMode) {
+                    let totals = getExactTotalSum();
+                    if (totals.sum < 1) {
+                        if (chkLower.checked) qtyLower.value = 6;
+                        else if (chkUpper.checked) qtyUpper.value = 6;
+                        else if (chkNumbers.checked) qtyNumbers.value = 6;
+                        else if (chkSymbols.checked) qtySymbols.value = 6;
+                        totals = getExactTotalSum();
+                    }
+                    totalLength = Math.min(64, totals.sum);
+                    exactCounts = {
+                        upper: totals.u,
+                        lower: totals.l,
+                        numbers: totals.n,
+                        symbols: totals.s
+                    };
+                }
+
+                lengthSlider.value = totalLength;
+                lengthNumber.value = totalLength;
+
+                resetSamplingTelemetry();
+
+                const finalPassword = generateNonRepeatingPassword({
+                    exactMode: exactMode,
+                    totalLength: totalLength,
+                    upper: chkUpper.checked,
+                    lower: chkLower.checked,
+                    numbers: chkNumbers.checked,
+                    symbols: chkSymbols.checked,
+                    counts: exactCounts
+                });
+
+                const stats = getSamplingStats();
+                csprngStatsText.textContent = "Amostras: " + stats.sampled + " • Rejeitadas: " + stats.rejected + " • Eficiência: " + stats.efficiency + "%";
+
+                const analysis = analyzePasswordStrength(finalPassword);
+
+                // Atualiza barra de força imediatamente
+                genStrengthLabel.textContent = analysis.label;
+                genStrengthLabel.style.color = analysis.color;
+                genStrengthMetrics.textContent = analysis.entropy + " bits • " + analysis.crackTime;
+                genStrengthBar.style.width = analysis.percent + "%";
+                genStrengthBar.style.background = analysis.gradient;
+
+                // Efeito visual suave de decodificação (sem alterar a telemetria da senha final)
+                if (decodeTimer) clearInterval(decodeTimer);
+                const previewChars = CHARSETS.upper + CHARSETS.lower + CHARSETS.numbers + CHARSETS.symbols;
+                let step = 0;
+                const totalSteps = 10;
+
+                decodeTimer = setInterval(function () {
+                    step++;
+                    const revealed = Math.floor((step / totalSteps) * finalPassword.length);
+                    let animatedText = "";
+                    for (let i = 0; i < finalPassword.length; i++) {
+                        if (i < revealed || step >= totalSteps) {
+                            animatedText += finalPassword[i];
+                        } else {
+                            animatedText += previewChars[secureRandomInt(previewChars.length)];
+                        }
+                    }
+                    genOutput.value = animatedText;
+
+                    if (step >= totalSteps) {
+                        clearInterval(decodeTimer);
+                        genOutput.value = finalPassword;
+                        if (saveToHistory) {
+                            recordPasswordInHistory(finalPassword, analysis);
+                        }
+                    }
+                }, 22);
+            }
+
+            // Alternância Modo Proporcional <-> Modo Quantidade Exata
+            toggleExactMode.addEventListener("change", function () {
+                const isExact = toggleExactMode.checked;
+                exactModeStatusText.textContent = isExact ? "Ativado" : "Desativado";
+                genModeBadge.textContent = isExact ? "Modo Quantidade Exata" : "Modo Proporcional";
+
+                const steppers = document.querySelectorAll(".exact-stepper");
+                steppers.forEach(function (el) {
+                    el.classList.toggle("visible", isExact);
+                });
+
+                lengthSlider.disabled = isExact;
+                lengthNumber.disabled = isExact;
+
+                if (isExact) {
+                    lengthBoxTitle.textContent = "Soma Total das Quantidades Exatas";
+                    lengthBoxHint.textContent = "Calculado automaticamente pelos campos abaixo";
+                    distributeExactCounts(parseInt(lengthNumber.value, 10) || 16);
+                } else {
+                    lengthBoxTitle.textContent = "Tamanho Total da Senha (6 a 64 caracteres)";
+                    lengthBoxHint.textContent = "Ajuste pelo controle ou número";
+                }
+
+                runPasswordGeneration(true);
+            });
+
+            // Eventos do Slider e Input de Tamanho Total
+            lengthSlider.addEventListener("input", function () {
+                lengthNumber.value = lengthSlider.value;
+                clearActivePresets();
+                runPasswordGeneration(true);
+            });
+
+            lengthNumber.addEventListener("change", function () {
+                let val = parseInt(lengthNumber.value, 10);
+                if (isNaN(val) || val < 6) val = 6;
+                if (val > 64) val = 64;
+                lengthNumber.value = val;
+                lengthSlider.value = val;
+                clearActivePresets();
+                runPasswordGeneration(true);
+            });
+
+            // Eventos dos Checkboxes de Categorias
+            [chkUpper, chkLower, chkNumbers, chkSymbols].forEach(function (chk) {
+                chk.addEventListener("change", function () {
+                    if (toggleExactMode.checked) {
+                        const mapQty = {
+                            chkUpper: qtyUpper,
+                            chkLower: qtyLower,
+                            chkNumbers: qtyNumbers,
+                            chkSymbols: qtySymbols
+                        };
+                        const targetQty = mapQty[chk.id];
+                        if (chk.checked && parseInt(targetQty.value, 10) === 0) {
+                            targetQty.value = 2;
+                        }
+                    }
+                    clearActivePresets();
+                    runPasswordGeneration(true);
+                });
+            });
+
+            // Botões + / - e Inputs de Quantidade Exata
+            document.querySelectorAll(".stepper-btn").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    const targetId = btn.getAttribute("data-target");
+                    const delta = parseInt(btn.getAttribute("data-step"), 10);
+                    const inputEl = document.getElementById(targetId);
+                    const currentTotal = getExactTotalSum().sum;
+
+                    let nextVal = (parseInt(inputEl.value, 10) || 0) + delta;
+                    if (nextVal < 0) nextVal = 0;
+                    if (delta > 0 && currentTotal >= 64) {
+                        showToast("Limite máximo de 64 caracteres atingido.");
+                        return;
+                    }
+                    inputEl.value = nextVal;
+
+                    const mapCheck = {
+                        qtyUpper: chkUpper,
+                        qtyLower: chkLower,
+                        qtyNumbers: chkNumbers,
+                        qtySymbols: chkSymbols
+                    };
+                    if (nextVal > 0 && mapCheck[targetId]) {
+                        mapCheck[targetId].checked = true;
+                    }
+
+                    clearActivePresets();
+                    runPasswordGeneration(true);
+                });
+            });
+
+            document.querySelectorAll(".stepper-input").forEach(function (inp) {
+                inp.addEventListener("change", function () {
+                    let val = parseInt(inp.value, 10);
+                    if (isNaN(val) || val < 0) val = 0;
+                    if (val > 64) val = 64;
+                    inp.value = val;
+                    clearActivePresets();
+                    runPasswordGeneration(true);
+                });
+            });
+
+            // Presets de Complexidade
+            function clearActivePresets() {
+                presetCards.forEach(function (c) { c.classList.remove("active"); });
+            }
+
+            presetCards.forEach(function (card) {
+                card.addEventListener("click", function () {
+                    clearActivePresets();
+                    card.classList.add("active");
+                    const preset = card.getAttribute("data-preset");
+
+                    if (preset === "basic") {
+                        lengthSlider.value = 8;
+                        lengthNumber.value = 8;
+                        chkUpper.checked = true;
+                        chkLower.checked = true;
+                        chkNumbers.checked = false;
+                        chkSymbols.checked = false;
+                    } else if (preset === "intermediate") {
+                        lengthSlider.value = 12;
+                        lengthNumber.value = 12;
+                        chkUpper.checked = true;
+                        chkLower.checked = true;
+                        chkNumbers.checked = true;
+                        chkSymbols.checked = false;
+                    } else if (preset === "advanced") {
+                        lengthSlider.value = 16;
+                        lengthNumber.value = 16;
+                        chkUpper.checked = true;
+                        chkLower.checked = true;
+                        chkNumbers.checked = true;
+                        chkSymbols.checked = true;
+                    } else if (preset === "maximum") {
+                        lengthSlider.value = 32;
+                        lengthNumber.value = 32;
+                        chkUpper.checked = true;
+                        chkLower.checked = true;
+                        chkNumbers.checked = true;
+                        chkSymbols.checked = true;
+                    }
+
+                    if (toggleExactMode.checked) {
+                        distributeExactCounts(parseInt(lengthNumber.value, 10));
+                    }
+
+                    runPasswordGeneration(true);
+                });
+            });
+
+            // Botões de Ação do Visor
+            btnMainGenerate.addEventListener("click", function () { runPasswordGeneration(true); });
+            btnRegenerate.addEventListener("click", function () { runPasswordGeneration(true); });
+
+            btnCopyGenerated.addEventListener("click", function () {
+                copyTextToClipboard(genOutput.value, "Senha copiada para a área de transferência!");
+                btnCopyGeneratedText.textContent = "Copiado!";
+                setTimeout(function () {
+                    btnCopyGeneratedText.textContent = "Copiar Senha";
+                }, 1800);
+            });
+
+            btnToggleGenMask.addEventListener("click", function () {
+                isGeneratedMasked = !isGeneratedMasked;
+                genOutput.type = isGeneratedMasked ? "password" : "text";
+            });
+
+            btnSendGenToHash.addEventListener("click", function () {
+                hashSourceInput.value = genOutput.value;
+                activateTab("hash");
+                showToast("Senha carregada no Gerador de Hash.");
+            });
+
+            /* ------------------------------------------------------------------
+               10. ABA 2: TESTE DE FORÇA EM TEMPO REAL
+               ------------------------------------------------------------------ */
+            function updateTesterUI() {
+                const pwd = testerInput.value;
+                const result = analyzePasswordStrength(pwd);
+
+                testerClassification.textContent = result.label;
+                testerClassification.style.color = pwd ? result.color : "var(--text-primary)";
+                testerScorePill.textContent = "Nota: " + result.score + " / 100";
+                testerStrengthBar.style.width = result.percent + "%";
+                testerStrengthBar.style.background = result.gradient;
+
+                testerEntropyText.textContent = "Entropia: " + result.entropy + " bits";
+                testerCrackText.textContent = "Tempo de quebra: " + result.crackTime;
+
+                document.getElementById("countUpper").textContent = result.counts.upper;
+                document.getElementById("countLower").textContent = result.counts.lower;
+                document.getElementById("countNumbers").textContent = result.counts.numbers;
+                document.getElementById("countSymbols").textContent = result.counts.symbols;
+
+                document.getElementById("chkReqLength").classList.toggle("passed", result.checks.length12);
+                document.getElementById("chkReqUpper").classList.toggle("passed", result.checks.upper);
+                document.getElementById("chkReqLower").classList.toggle("passed", result.checks.lower);
+                document.getElementById("chkReqNumbers").classList.toggle("passed", result.checks.numbers);
+                document.getElementById("chkReqSymbols").classList.toggle("passed", result.checks.symbols);
+                document.getElementById("chkReqNoRepeat").classList.toggle("passed", pwd.length > 0 && result.checks.noRepeat);
+            }
+
+            testerInput.addEventListener("input", updateTesterUI);
+
+            btnToggleTesterMask.addEventListener("click", function () {
+                isTesterMasked = !isTesterMasked;
+                testerInput.type = isTesterMasked ? "password" : "text";
+            });
+
+            btnClearTester.addEventListener("click", function () {
+                testerInput.value = "";
+                updateTesterUI();
+                testerInput.focus();
+            });
+
+            /* ------------------------------------------------------------------
+               11. ABA 3: GERADOR DE HASH CRIPTOGRÁFICO (SHA & MD5)
+               ------------------------------------------------------------------ */
+            function computeMD5Bytes(inputStr) {
+                const utf8 = new TextEncoder().encode(inputStr);
+                const msgLen = utf8.length;
+                const bitLen = msgLen * 8;
+                const padLen = (((msgLen + 8) >>> 6) << 6) + 64;
+                const buffer = new Uint8Array(padLen);
+                buffer.set(utf8);
+                buffer[msgLen] = 0x80;
+
+                const view = new DataView(buffer.buffer);
+                view.setUint32(padLen - 8, bitLen >>> 0, true);
+                view.setUint32(padLen - 4, Math.floor(bitLen / 0x100000000) >>> 0, true);
+
+                let a0 = 0x67452301;
+                let b0 = 0xefcdab89;
+                let c0 = 0x98badcfe;
+                let d0 = 0x10325476;
+
+                const shifts = [
+                    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+                    5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
+                    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+                    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+                ];
+
+                const K = new Uint32Array(64);
+                for (let i = 0; i < 64; i++) {
+                    K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000) >>> 0;
+                }
+
+                for (let offset = 0; offset < padLen; offset += 64) {
+                    const M = new Uint32Array(16);
+                    for (let j = 0; j < 16; j++) {
+                        M[j] = view.getUint32(offset + j * 4, true);
+                    }
+                    let A = a0, B = b0, C = c0, D = d0;
+                    for (let i = 0; i < 64; i++) {
+                        let F, g;
+                        if (i < 16) {
+                            F = (B & C) | (~B & D);
+                            g = i;
+                        } else if (i < 32) {
+                            F = (D & B) | (~D & C);
+                            g = (5 * i + 1) % 16;
+                        } else if (i < 48) {
+                            F = B ^ C ^ D;
+                            g = (3 * i + 5) % 16;
+                        } else {
+                            F = C ^ (B | ~D);
+                            g = (7 * i) % 16;
+                        }
+                        F = (F + A + K[i] + M[g]) >>> 0;
+                        A = D;
+                        D = C;
+                        C = B;
+                        B = (B + ((F << shifts[i]) | (F >>> (32 - shifts[i])))) >>> 0;
+                    }
+                    a0 = (a0 + A) >>> 0;
+                    b0 = (b0 + B) >>> 0;
+                    c0 = (c0 + C) >>> 0;
+                    d0 = (d0 + D) >>> 0;
+                }
+
+                const out = new Uint8Array(16);
+                const outView = new DataView(out.buffer);
+                outView.setUint32(0, a0, true);
+                outView.setUint32(4, b0, true);
+                outView.setUint32(8, c0, true);
+                outView.setUint32(12, d0, true);
+                return out;
+            }
+
+            function formatDigestOutput(bytes, format) {
+                if (format === "base64") {
+                    let bin = "";
+                    for (let i = 0; i < bytes.length; i++) {
+                        bin += String.fromCharCode(bytes[i]);
+                    }
+                    return btoa(bin);
+                }
+                const hex = Array.from(bytes).map(function (b) {
+                    return b.toString(16).padStart(2, "0");
+                }).join("");
+                return format === "hex-upper" ? hex.toUpperCase() : hex;
+            }
+
+            async function updateAllHashes() {
+                const rawText = hashSourceInput.value;
+                const saltText = hashSaltInput.value;
+                const format = hashFormatSelect.value;
+
+                if (!rawText) {
+                    hashResultsList.innerHTML = '<div class="empty-state">Digite ou carregue uma senha acima para gerar os hashes SHA-256, SHA-512, SHA-384, SHA-1 e MD5.</div>';
+                    return;
+                }
+
+                const payload = saltText ? (saltText + ":" + rawText) : rawText;
+                const encodedBytes = new TextEncoder().encode(payload);
+
+                const algorithms = [
+                    { name: "SHA-256", bits: "256 bits • Padrão Seguro", subtle: "SHA-256" },
+                    { name: "SHA-512", bits: "512 bits • Alta Segurança", subtle: "SHA-512" },
+                    { name: "SHA-384", bits: "384 bits", subtle: "SHA-384" },
+                    { name: "SHA-1", bits: "160 bits • Legado", subtle: "SHA-1" },
+                    { name: "MD5", bits: "128 bits • Legado", subtle: null }
+                ];
+
+                const cardsHtml = [];
+                for (let i = 0; i < algorithms.length; i++) {
+                    const alg = algorithms[i];
+                    let digestBytes;
+                    if (alg.subtle && window.crypto && window.crypto.subtle) {
+                        const buf = await window.crypto.subtle.digest(alg.subtle, encodedBytes);
+                        digestBytes = new Uint8Array(buf);
+                    } else {
+                        digestBytes = computeMD5Bytes(payload);
+                    }
+                    const formatted = formatDigestOutput(digestBytes, format);
+
+                    cardsHtml.push(
+                        '<div class="hash-card">' +
+                            '<div class="hash-card-header">' +
+                                '<div class="hash-alg-title">' +
+                                    '<span>' + alg.name + '</span>' +
+                                    '<span class="hash-bits-tag">' + alg.bits + '</span>' +
+                                '</div>' +
+                                '<button type="button" class="btn btn-secondary btn-copy-hash" data-hash="' + escapeHtml(formatted) + '" style="padding: 6px 12px; font-size: 0.78rem;">Copiar</button>' +
+                            '</div>' +
+                            '<div class="hash-digest-box">' + escapeHtml(formatted) + '</div>' +
+                        '</div>'
+                    );
+                }
+
+                hashResultsList.innerHTML = cardsHtml.join("");
+
+                document.querySelectorAll(".btn-copy-hash").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        copyTextToClipboard(btn.getAttribute("data-hash"), "Hash copiado!");
+                    });
+                });
+            }
+
+            hashSourceInput.addEventListener("input", updateAllHashes);
+            hashSaltInput.addEventListener("input", updateAllHashes);
+            hashFormatSelect.addEventListener("change", updateAllHashes);
+
+            document.getElementById("btnLoadCurrentPwdToHash").addEventListener("click", function () {
+                hashSourceInput.value = genOutput.value;
+                updateAllHashes();
+                showToast("Senha atual carregada.");
+            });
+
+            document.getElementById("btnClearHashInput").addEventListener("click", function () {
+                hashSourceInput.value = "";
+                updateAllHashes();
+                hashSourceInput.focus();
+            });
+
+            document.getElementById("btnRandomSalt").addEventListener("click", function () {
+                const pool = CHARSETS.upper + CHARSETS.lower + CHARSETS.numbers;
+                let salt = "";
+                for (let i = 0; i < 12; i++) {
+                    salt += pool[secureRandomInt(pool.length)];
+                }
+                hashSaltInput.value = salt;
+                updateAllHashes();
+                showToast("Salt aleatório gerado via Rejection Sampling!");
+            });
+
+            /* ------------------------------------------------------------------
+               12. HISTÓRICO DAS 20 ÚLTIMAS SENHAS ÚNICAS (SEM REPETIÇÃO)
+               ------------------------------------------------------------------ */
+            function loadHistoryFromStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_HISTORY_KEY);
+                    if (!raw) return [];
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed.slice(0, MAX_HISTORY_ITEMS) : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveHistoryToStorage() {
+                try {
+                    localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(passwordHistory));
+                } catch (e) {
+                    // Ignora erro de quota
+                }
+            }
+
+            function recordPasswordInHistory(pwd, analysis) {
+                if (!pwd) return;
+
+                // Remove se já existir para garantir 0 duplicatas
+                passwordHistory = passwordHistory.filter(function (entry) {
+                    return entry.password !== pwd;
+                });
+
+                const info = analysis || analyzePasswordStrength(pwd);
+                const now = new Date();
+                const dateStr = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+                const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+                passwordHistory.unshift({
+                    password: pwd,
+                    strengthLabel: info.label,
+                    strengthColor: info.color,
+                    timestamp: dateStr + " às " + timeStr
+                });
+
+                if (passwordHistory.length > MAX_HISTORY_ITEMS) {
+                    passwordHistory = passwordHistory.slice(0, MAX_HISTORY_ITEMS);
+                }
+
+                saveHistoryToStorage();
+                renderHistoryList();
+            }
+
+            function renderHistoryList() {
+                historyCounterBadge.textContent = passwordHistory.length + "/20";
+
+                if (passwordHistory.length === 0) {
+                    historyListContainer.innerHTML = '<div class="empty-state">Nenhuma senha no histórico ainda.<br>As últimas 20 senhas únicas aparecerão aqui.</div>';
+                    return;
+                }
+
+                const html = passwordHistory.map(function (item, idx) {
+                    return (
+                        '<div class="history-item">' +
+                            '<div class="history-item-info">' +
+                                '<div class="history-item-meta">' +
+                                    '<span class="strength-dot" style="background:' + item.strengthColor + ';"></span>' +
+                                    '<strong style="color:' + item.strengthColor + ';">' + item.strengthLabel + '</strong>' +
+                                    '<span style="color: var(--text-muted);">• ' + item.password.length + ' chars</span>' +
+                                '</div>' +
+                                '<div class="history-pwd-text" title="' + escapeHtml(item.password) + '">' + escapeHtml(item.password) + '</div>' +
+                                '<div class="history-time">#' + (idx + 1) + ' • ' + item.timestamp + '</div>' +
+                            '</div>' +
+                            '<div class="history-item-actions">' +
+                                '<button type="button" class="btn btn-secondary btn-icon btn-hist-hash" data-pwd="' + escapeHtml(item.password) + '" title="Gerar Hash desta senha">#</button>' +
+                                '<button type="button" class="btn btn-primary btn-icon btn-hist-copy" data-pwd="' + escapeHtml(item.password) + '" title="Copiar senha">Copiar</button>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                }).join("");
+
+                historyListContainer.innerHTML = html;
+
+                document.querySelectorAll(".btn-hist-copy").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        copyTextToClipboard(btn.getAttribute("data-pwd"), "Senha do histórico copiada!");
+                    });
+                });
+
+                document.querySelectorAll(".btn-hist-hash").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        hashSourceInput.value = btn.getAttribute("data-pwd");
+                        activateTab("hash");
+                        showToast("Senha carregada no Gerador de Hash.");
+                    });
+                });
+            }
+
+            btnClearHistory.addEventListener("click", function () {
+                if (passwordHistory.length === 0) {
+                    showToast("O histórico já está vazio.");
+                    return;
+                }
+                passwordHistory = [];
+                saveHistoryToStorage();
+                renderHistoryList();
+                showToast("Histórico limpo com sucesso.");
+            });
+
+            /* ------------------------------------------------------------------
+               13. JANELA (MODAL) DE SENHAS SUPER FORTES
+               ------------------------------------------------------------------ */
+            function renderSuperStrongOptions() {
+                const len = parseInt(superLengthSelect.value, 10) || 32;
+                const usedSet = new Set(passwordHistory.map(function (h) { return h.password; }));
+                const itemsHtml = [];
+
+                for (let i = 0; i < 5; i++) {
+                    let superPwd = "";
+                    let guard = 0;
+                    while (guard < 120) {
+                        superPwd = createPasswordString({
+                            exactMode: false,
+                            totalLength: len,
+                            upper: true,
+                            lower: true,
+                            numbers: true,
+                            symbols: true
+                        });
+                        if (!usedSet.has(superPwd)) {
+                            usedSet.add(superPwd);
+                            break;
+                        }
+                        guard++;
+                    }
+
+                    const info = analyzePasswordStrength(superPwd);
+
+                    itemsHtml.push(
+                        '<div class="super-item">' +
+                            '<div class="super-item-top">' +
+                                '<strong>Opção Super Forte #' + (i + 1) + '</strong>' +
+                                '<span>' + superPwd.length + ' caracteres • ' + info.entropy + ' bits (' + info.label + ')</span>' +
+                            '</div>' +
+                            '<div class="super-item-row">' +
+                                '<code class="super-code">' + escapeHtml(superPwd) + '</code>' +
+                                '<button type="button" class="btn btn-primary btn-copy-super" data-pwd="' + escapeHtml(superPwd) + '">Copiar e Salvar</button>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                }
+
+                superPasswordsContainer.innerHTML = itemsHtml.join("");
+
+                document.querySelectorAll(".btn-copy-super").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        const pwd = btn.getAttribute("data-pwd");
+                        recordPasswordInHistory(pwd);
+                        copyTextToClipboard(pwd, "Senha Super Forte copiada e salva no histórico!");
+                    });
+                });
+            }
+
+            function openSuperModal() {
+                superModalBackdrop.classList.add("open");
+                renderSuperStrongOptions();
+            }
+
+            function closeSuperModal() {
+                superModalBackdrop.classList.remove("open");
+            }
+
+            document.getElementById("btnOpenSuperModal").addEventListener("click", openSuperModal);
+            document.getElementById("btnCloseSuperModalTop").addEventListener("click", closeSuperModal);
+            document.getElementById("btnCloseSuperModalBottom").addEventListener("click", closeSuperModal);
+            document.getElementById("btnRefreshSuperBatch").addEventListener("click", renderSuperStrongOptions);
+            superLengthSelect.addEventListener("change", renderSuperStrongOptions);
+
+            superModalBackdrop.addEventListener("click", function (e) {
+                if (e.target === superModalBackdrop) {
+                    closeSuperModal();
+                }
+            });
+
+            /* ------------------------------------------------------------------
+               14. INICIALIZAÇÃO DO APLICATIVO
+               ------------------------------------------------------------------ */
+            renderHistoryList();
+            updateTesterUI();
+            updateAllHashes();
+            runPasswordGeneration(true);
+        })();
+    </script>
+</body>
+</html>
